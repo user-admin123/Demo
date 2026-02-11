@@ -190,6 +190,7 @@ export default function AppointmentForm() {
                 type="tel"
                 placeholder="+61 4XX XXX XXX"
                 {...register("phone")}
+                defaultValue="+61"
                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {errors.phone && (
