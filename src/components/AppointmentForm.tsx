@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { appointmentSchema, AppointmentFormData } from "./validation";
-import { motion, AnimatePresence } from "framer-motion";
 import { isToday, isAfter, setHours, setMinutes, getDay } from "date-fns";
 import { toast } from "@/components/ui/sonner";
 
@@ -34,18 +33,23 @@ function generateTimeSlots(date: Date) {
       const slot = setMinutes(setHours(date, hour), minute);
       if (isToday(date) && !isAfter(slot, now)) continue;
       slots.push(
-        slot.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true, })
+        slot.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
       );
     }
   }
+
   return slots;
 }
 
 export default function AppointmentForm() {
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [selectedTime, setSelectedTime] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
   const [weekendWarning, setWeekendWarning] = useState("");
+  const [timeError, setTimeError] = useState("");
 
   const {
     register,
@@ -70,46 +74,47 @@ export default function AppointmentForm() {
 
   const selectedDate = watch("date");
   const selectedServices = watch("services");
-  const [timeError, setTimeError] = useState("");
 
+  // Update time slots when date changes
   useEffect(() => {
-  if (!selectedDate) return;
+    if (!selectedDate) return;
 
-  const date = new Date(selectedDate);
-  const day = getDay(date);
+    const date = new Date(selectedDate);
+    const day = getDay(date);
 
-  // Weekend check
-  if (day === 0 || day === 6) {
-    setTimeSlots([]);
-    setWeekendWarning("Appointments not available on weekends.");
-    setTimeError("");
-    setValue("time", "");
-    setSelectedTime("");
-    return;
-  }
+    // Weekend check
+    if (day === 0 || day === 6) {
+      setTimeSlots([]);
+      setWeekendWarning("Appointments not available on weekends.");
+      setTimeError("");
+      setValue("time", "");
+      setSelectedTime("");
+      return;
+    }
 
-  const slots = generateTimeSlots(date);
+    const slots = generateTimeSlots(date);
 
-  // Today but no slots left
-  if (slots.length === 0) {
-    setTimeSlots([]);
+    // Today but no slots left
+    if (slots.length === 0) {
+      setTimeSlots([]);
+      setWeekendWarning("");
+      setTimeError(
+        "No available time slots for today. Please select tomorrow or another date."
+      );
+      setValue("time", "");
+      setSelectedTime("");
+      return;
+    }
+
+    // Normal day
     setWeekendWarning("");
-    setTimeError(
-      "No available time slots for today. Please select tomorrow or another date."
-    );
-    setValue("time", "");
+    setTimeError("");
+    setTimeSlots(slots);
     setSelectedTime("");
-    return;
-  }
+    setValue("time", "");
+  }, [selectedDate, setValue]);
 
-  // Normal day
-  setWeekendWarning("");
-  setTimeError("");
-  setTimeSlots(slots);
-  setSelectedTime("");
-  setValue("time", "");
-}, [selectedDate, setValue]);
-
+  // Toggle service selection
   const toggleService = (service: string) => {
     if (selectedServices.includes(service)) {
       setValue(
@@ -121,41 +126,84 @@ export default function AppointmentForm() {
     }
   };
 
+  // Form submission
   const onSubmit = async (data: AppointmentFormData) => {
-  try {
-    await toast.promise(
-      fetch("/api/appointment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).then(async (res) => {
-        if (!res.ok) throw new Error("Submission failed");
-        reset(); // clear form
-        setSelectedTime("");
-        return res;
-      }),
-      {
-        loading: "Booking appointment...",
-        success: "Appointment booked! We’ll contact you shortly to confirm your appointment."
-        error: "Submission failed. Please try again or contact us directly.",
-      }
-    );
+    try {
+      await toast.promise(
+        fetch("/api/appointment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }).then(async (res) => {
+          if (!res.ok) throw new Error("Submission failed");
+          reset();
+          setSelectedTime("");
+          return res;
+        }),
+        {
+          loading: {
+            render: "Booking appointment...",
+            duration: 0, // stays until resolved
+            style: {
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "#3b82f6",
+              color: "#fff",
+              padding: "1rem 2rem",
+              fontSize: "1rem",
+              borderRadius: "0.5rem",
+              textAlign: "center",
+              zIndex: 9999,
+            },
+          },
+          success: {
+            render:
+              "Appointment booked! We’ll contact you shortly to confirm your appointment.",
+            duration: 4000,
+            style: {
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "#22c55e",
+              color: "#fff",
+              padding: "1rem 2rem",
+              fontSize: "1rem",
+              borderRadius: "0.5rem",
+              textAlign: "center",
+              zIndex: 9999,
+            },
+          },
+          error: {
+            render: "Submission failed. Please try again or contact us directly.",
+            duration: 4000,
+            style: {
+              position: "top-right",
+              background: "#ef4444",
+              color: "#fff",
+              padding: "0.8rem 1.5rem",
+              borderRadius: "0.5rem",
+              textAlign: "center",
+              zIndex: 9999,
+            },
+          },
+        }
+      );
 
-    // Auto redirect after 2 seconds
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
-
-  } catch (err) {
-    // Error already handled by toast.promise
-    console.error(err);
-  }
-};
+      // Auto redirect after 3s
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="section-padding">
       <div className="section-container max-w-3xl mx-auto">
-        
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-6 bg-background/50 glass-card p-8 rounded-lg shadow-lg"
@@ -172,7 +220,9 @@ export default function AppointmentForm() {
                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {errors.name && (
-                <p className="text-destructive text-xs mt-1">{errors.name.message}</p>
+                <p className="text-destructive text-xs mt-1">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -264,9 +314,7 @@ export default function AppointmentForm() {
             </div>
           )}
           {timeError && (
-            <p className="text-destructive text-xs mt-2">
-              {timeError}
-            </p>
+            <p className="text-destructive text-xs mt-2">{timeError}</p>
           )}
 
           {/* Services */}
@@ -299,7 +347,7 @@ export default function AppointmentForm() {
             <Link
               to="/policies"
               className="underline text-primary hover:text-primary/90 transition-colors"
-              >
+            >
               Policies
             </Link>.
           </p>
