@@ -1,33 +1,13 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-
-const contactSchema = z
-  .object({
-    name: z.string().trim().min(1, "Name is required").max(100),
-    phone: z
-      .string()
-      .trim()
-      .min(1, "Phone number is required")
-      .refine(
-        (val) => /^\+?\d{8,15}$/.test(val.replace(/[^\d+]/g, "")),
-        { message: "Enter a valid phone number" }
-      ),
-    service: z.string().trim().min(1, "Please select a service"),
-    message: z.string().trim().max(1000).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.service === "Other" && !data.message) {
-      ctx.addIssue({
-        path: ["message"],
-        message: "Please enter a message for Other service",
-        code: z.ZodIssueCode.custom,
-      });
-    }
-  });
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  contactSchema,
+  ContactFormData,
+} from "@/components/validation";
 
 const hours = [
   { day: "Monday", time: "10:00 AM – 6:00 PM" },
@@ -41,58 +21,51 @@ const hours = [
 
 export default function ContactPage() {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    service: "",
-    message: "",
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      phone: "+61", // default country code
+      service: "",
+      message: "",
+    },
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
-  };
+  const onSubmit = async (data: ContactFormData) => {
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+      if (!response.ok) throw new Error("Submission failed");
 
-  const result = contactSchema.safeParse(formData);
-  if (!result.success) {
-    const fieldErrors: Record<string, string> = {};
-    result.error.issues.forEach((issue) => {
-      fieldErrors[issue.path[0] as string] = issue.message;
-    });
-    setErrors(fieldErrors);
-    return;
-  }
-
-  try {
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (response.ok) {
       toast({
         title: "Message sent!",
         description: "Thank you! We’ll contact you shortly.",
       });
-      setFormData({ name: "", phone: "", service: "", message: "" });
-      setErrors({});
-    } else {
-      throw new Error("Submission failed");
+
+      reset({
+        name: "",
+        phone: "+61",
+        service: "",
+        message: "",
+      });
+    } catch (err) {
+      toast({
+        title: "Submission failed",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
     }
-  } catch (err) {
-    console.error(err);
-    toast({
-      title: "Submission failed",
-      description: "Please try again or contact us directly.",
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   return (
     <>
@@ -121,54 +94,65 @@ export default function ContactPage() {
       <section className="section-padding">
         <div className="section-container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact form */}
+            
+            {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="heading-md text-foreground mb-6">Send a Message</h2>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <h2 className="heading-md text-foreground mb-6">
+                Send a Message
+              </h2>
+
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-4 bg-background/50 glass-card p-8 rounded-lg shadow-lg max-w-xl mx-auto"
+              >
+                {/* Name */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-body text-foreground mb-1">
+                  <label className="block text-sm font-body text-foreground mb-1">
                     Name *
                   </label>
                   <input
                     type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
+                    {...register("name")}
+                    placeholder="John Doe"
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm font-body focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Your name"
                   />
-                  {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
+                  {errors.name && (
+                    <p className="text-destructive text-xs mt-1">
+                      {errors.name.message}
+                    </p>
+                  )}
                 </div>
+
+                {/* Phone */}
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-body text-foreground mb-1">
+                  <label className="block text-sm font-body text-foreground mb-1">
                     Phone Number *
                   </label>
                   <input
                     type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
+                    {...register("phone")}
+                    placeholder="+61 4XX XXX XXX"
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm font-body focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Your phone number"
                   />
-                  {errors.phone && <p className="text-destructive text-xs mt-1">{errors.phone}</p>}
+                  {errors.phone && (
+                    <p className="text-destructive text-xs mt-1">
+                      {errors.phone.message}
+                    </p>
+                  )}
                 </div>
+
+                {/* Service */}
                 <div>
-                  <label htmlFor="service" className="block text-sm font-body text-foreground mb-1">
+                  <label className="block text-sm font-body text-foreground mb-1">
                     Preferred Service *
                   </label>
                   <select
-                    id="service"
-                    name="service"
-                    value={formData.service}
-                    onChange={handleChange}
+                    {...register("service")}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm font-body focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">Select a service</option>
@@ -181,33 +165,43 @@ export default function ContactPage() {
                     <option value="Other">Other</option>
                   </select>
                   {errors.service && (
-                    <p className="text-destructive text-xs mt-1">{errors.service}</p>
+                    <p className="text-destructive text-xs mt-1">
+                      {errors.service.message}
+                    </p>
                   )}
                 </div>
+
+                {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-body text-foreground mb-1">
+                  <label className="block text-sm font-body text-foreground mb-1">
                     Message
                   </label>
                   <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
                     rows={4}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm font-body resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    {...register("message")}
                     placeholder="Tell us about the look you'd like..."
+                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm font-body resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   {errors.message && (
-                    <p className="text-destructive text-xs mt-1">{errors.message}</p>
+                    <p className="text-destructive text-xs mt-1">
+                      {errors.message.message}
+                    </p>
                   )}
                 </div>
-                <Button variant="hero" size="lg" type="submit" className="mt-2 self-start">
-                  Send Message
+
+                <Button
+                  variant="hero"
+                  size="lg"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="mt-2 self-start"
+                >
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </motion.div>
 
-            {/* Info side */}
+            {/* Info Side */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -215,32 +209,38 @@ export default function ContactPage() {
               transition={{ duration: 0.5 }}
               className="space-y-8"
             >
-              {/* Contact details */}
               <div className="glass-card p-6">
-                <h3 className="heading-md text-foreground mb-4">Get in Touch</h3>
+                <h3 className="heading-md text-foreground mb-4">
+                  Get in Touch
+                </h3>
                 <div className="flex flex-col gap-4">
                   <a
                     href="tel:+61460600374"
                     className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Phone size={18} className="text-primary" />
-                    <span className="text-sm font-body">+61 460 600 374</span>
+                    <span className="text-sm font-body">
+                      +61 460 600 374
+                    </span>
                   </a>
                   <a
                     href="mailto:glossxnailstudio@gmail.com"
                     className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors"
-                    >
+                  >
                     <Mail size={18} className="text-primary" />
-                    <span className="text-sm font-body">glossxnailstudio@gmail.com</span>
+                    <span className="text-sm font-body">
+                      glossxnailstudio@gmail.com
+                    </span>
                   </a>
                   <div className="flex items-start gap-3 text-muted-foreground">
                     <MapPin size={18} className="text-primary mt-0.5 shrink-0" />
-                    <span className="text-sm font-body">38 Adams St, Tara QLD 4421, Australia</span>
+                    <span className="text-sm font-body">
+                      38 Adams St, Tara QLD 4421, Australia
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Business hours */}
               <div className="glass-card p-6">
                 <h3 className="font-heading text-lg font-medium text-foreground mb-4 flex items-center gap-2">
                   <Clock size={18} className="text-primary" />
@@ -248,16 +248,25 @@ export default function ContactPage() {
                 </h3>
                 <div className="flex flex-col gap-2">
                   {hours.map((h) => (
-                    <div key={h.day} className="flex justify-between text-sm font-body">
+                    <div
+                      key={h.day}
+                      className="flex justify-between text-sm font-body"
+                    >
                       <span className="text-foreground">{h.day}</span>
-                      <span className={h.time === "Closed" ? "text-muted-foreground" : "text-primary font-bold"}>
+                      <span
+                        className={
+                          h.time === "Closed"
+                            ? "text-muted-foreground"
+                            : "text-primary font-bold"
+                        }
+                      >
                         {h.time}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
-
+            
               {/* Map */}
               <div className="rounded-lg overflow-hidden border border-border">
                 <iframe
