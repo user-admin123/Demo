@@ -129,20 +129,7 @@ export default function AppointmentForm() {
   // Form submission
   const onSubmit = async (data: AppointmentFormData) => {
   try {
-    const res = await fetch("/api/appointment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) {
-      // Show error toast only, no redirect
-      toast.error("Submission failed. Please try again or contact us directly.", {
-        duration: 4000,
-      });
-      return;
-    }
-
+    // --- Simulate success manually ---
     const isSuccess = true; // <-- set this to false to simulate failure
 
     if (isSuccess) {
@@ -151,17 +138,24 @@ export default function AppointmentForm() {
         { duration: 4000 }
       );
 
-    reset();
-    setSelectedTime("");
+      reset();
+      setSelectedTime("");
 
-    // Only redirect on success
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
+      // Redirect after 3s
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+    } else {
+      // Simulate failure
+      toast.error(
+        "Submission failed. Please try again or contact us directly.",
+        { duration: 4000 }
+      );
+    }
   } catch (err) {
     console.error(err);
     toast.error(
-      "Unable to connect to server. Please try again later.",
+      "Something went wrong. Please try again later.",
       { duration: 4000 }
     );
   }
