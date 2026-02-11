@@ -60,7 +60,7 @@ export default function AppointmentForm() {
     defaultValues: {
       name: "",
       email: "",
-      phone: "+61",
+      phone: "",
       date: "",
       time: "",
       services: [],
