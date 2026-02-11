@@ -81,7 +81,7 @@ export default function HomePage() {
               Beautiful Nails, Personalized for You
             </h2>
             <p className="text-body">
-              GlossX is a home-based nail salon in Tara, QLD, dedicated to providing
+              Glossx is a home-based nail salon in Tara, QLD, dedicated to providing
               high-quality gel nail services with a personal touch. Using premium products
               and attention to detail, every set is designed to be long-lasting and
               uniquely yours.
