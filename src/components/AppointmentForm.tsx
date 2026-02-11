@@ -152,6 +152,7 @@ export default function AppointmentForm() {
               </label>
               <input
                 {...register("name")}
+                placeholder="John Doe"
                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {errors.name && (
@@ -167,6 +168,7 @@ export default function AppointmentForm() {
                 type="text"
                 inputMode="email"
                 {...register("email")}
+                placeholder="example@email.com"
                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {errors.email && (
@@ -322,6 +324,40 @@ export default function AppointmentForm() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Failure Popup */}
+<AnimatePresence>
+  {showError && (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="fixed top-5 right-5 bg-destructive text-white px-6 py-4 rounded shadow-md z-50 max-w-sm"
+    >
+      <p className="mb-3">{errorMessage}</p>
+      <div className="flex justify-end gap-2">
+        {/* Close button */}
+        <button
+          onClick={() => setShowError(false)}
+          className="underline text-white hover:text-gray-200 px-2 py-1"
+        >
+          Close
+        </button>
+
+        {/* Go Home button */}
+        <button
+          onClick={() => {
+            setShowError(false);
+            window.location.href = "/";
+          }}
+          className="bg-white text-destructive px-3 py-1 rounded-md font-medium hover:bg-gray-100 transition"
+        >
+          Go Home
+        </button>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </div>
   );
 }
