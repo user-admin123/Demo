@@ -126,36 +126,38 @@ export default function AppointmentForm() {
     }
   };
 
-  // Form submission
   const onSubmit = async (data: AppointmentFormData) => {
   try {
-    // --- Simulate success manually ---
-    const isSuccess = true; // <-- set this to false to simulate failure
+    const res = await fetch("/api/appointment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-    if (isSuccess) {
-      toast.success(
-        "Appointment booked! We’ll contact you shortly to confirm your appointment.",
-        { duration: 4000 }
-      );
-
-      reset();
-      setSelectedTime("");
-
-      // Redirect after 3s
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 3000);
-    } else {
-      // Simulate failure
-      toast.error(
-        "Submission failed. Please try again or contact us directly.",
-        { duration: 4000 }
-      );
+    if (!res.ok) {
+      // Show error toast only, no redirect
+      toast.error("Submission failed. Please try again or contact us directly.", {
+        duration: 4000,
+      });
+      return;
     }
+
+    // Success
+    toast.success(
+      "Appointment booked! We’ll contact you shortly to confirm your appointment.",
+      { duration: 4000 }
+    );
+
+    reset();
+    setSelectedTime("");
+
+    // Only redirect on success
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 3000);
   } catch (err) {
-    console.error(err);
     toast.error(
-      "Something went wrong. Please try again later.",
+      "Unable to connect to server. Please try again later.",
       { duration: 4000 }
     );
   }
