@@ -128,6 +128,7 @@ export default function AppointmentForm() {
 
   const onSubmit = async (data: AppointmentFormData) => {
   try {
+    // Simulate backend for now (or replace with real fetch)
     const res = await fetch("/api/appointment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -135,31 +136,34 @@ export default function AppointmentForm() {
     });
 
     if (!res.ok) {
-      // Show error toast only, no redirect
-      toast.error("Submission failed. Please try again or contact us directly.", {
-        duration: 4000,
+      toast({
+        title: "Submission failed",
+        description: "Please try again or contact us directly.",
+        variant: "destructive", // matches your theme's error style
       });
       return;
     }
 
-    // Success
-    toast.success(
-      "Appointment booked! We’ll contact you shortly to confirm your appointment.",
-      { duration: 4000 }
-    );
+    // Success toast
+    toast({
+      title: "Appointment booked!",
+      description: "We’ll contact you shortly to confirm your appointment.",
+      variant: "default", // standard success look
+    });
 
     reset();
     setSelectedTime("");
 
-    // Only redirect on success
+    // Redirect after 3s
     setTimeout(() => {
       window.location.href = "/";
     }, 3000);
   } catch (err) {
-    toast.error(
-      "Unable to connect to server. Please try again later.",
-      { duration: 4000 }
-    );
+    toast({
+      title: "Submission failed",
+      description: "Unable to connect to server. Please try again later.",
+      variant: "destructive",
+    });
   }
 };
 
