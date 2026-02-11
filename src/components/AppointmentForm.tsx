@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { appointmentSchema, AppointmentFormData } from "./validation";
 import { isToday, isAfter, setHours, setMinutes, getDay } from "date-fns";
-import { toast } from "@/components/ui/sonner";
+import { useToast } from "@/hooks/use-toast"; // <- use same toast hook as contact page
 
 const SERVICES = [
   "Basic Mani/Pedi (No Polish)",
@@ -50,6 +50,8 @@ export default function AppointmentForm() {
   const [selectedTime, setSelectedTime] = useState("");
   const [weekendWarning, setWeekendWarning] = useState("");
   const [timeError, setTimeError] = useState("");
+
+  const { toast } = useToast(); // <- same as contact page
 
   const {
     register,
@@ -127,45 +129,49 @@ export default function AppointmentForm() {
   };
 
   const onSubmit = async (data: AppointmentFormData) => {
-  try {
-    // Simulate backend for now (or replace with real fetch)
-    const res = await fetch("/api/appointment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    try {
+      const res = await fetch("/api/appointment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        toast({
+          title: "Submission failed",
+          description: "Please try again or contact us directly.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success toast using same hook as contact page
+      toast({
+        title: "Appointment booked!",
+        description: "We’ll contact you shortly to confirm your appointment.",
+        variant: "success",
+        style: {
+          background: "green", // solid green background
+          color: "white",      // text color
+          padding: "1rem",
+          borderRadius: "0.5rem",
+        },
+      });
+
+      // Reset form AFTER toast shows
+      setTimeout(() => {
+        reset();
+        setSelectedTime("");
+        window.location.href = "/";
+      }, 3000);
+    } catch (err) {
       toast({
         title: "Submission failed",
-        description: "Please try again or contact us directly.",
-        variant: "destructive", // matches your theme's error style
+        description: "Unable to connect to server. Please try again later.",
+        variant: "destructive",
       });
-      return;
     }
-
-    // Success toast
-    toast({
-      title: "Appointment booked!",
-      description: "We’ll contact you shortly to confirm your appointment.",
-      variant: "default", // standard success look
-    });
-
-    reset();
-    setSelectedTime("");
-
-    // Redirect after 3s
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
-  } catch (err) {
-    toast({
-      title: "Submission failed",
-      description: "Unable to connect to server. Please try again later.",
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   return (
     <div className="section-padding">
