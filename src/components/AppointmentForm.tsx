@@ -118,6 +118,9 @@ export default function AppointmentForm() {
     }
   };
 
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const onSubmit = async (data: AppointmentFormData) => {
     try {
       const res = await fetch("/api/appointment", {
@@ -131,8 +134,9 @@ export default function AppointmentForm() {
       setShowSuccess(true); // Show popup
       reset(); // Clear form
       setSelectedTime("");
-    } catch {
-      alert("Submission failed. Please try again or contact us directly.");
+    } catch (err: any) {
+      setErrorMessage("Submission failed. Please try again or contact us directly.");
+      setShowError(true);
     }
   };
 
@@ -334,16 +338,18 @@ export default function AppointmentForm() {
       exit={{ opacity: 0, y: -20 }}
       className="fixed top-5 right-5 bg-destructive text-white px-6 py-4 rounded shadow-md z-50 max-w-sm"
     >
-      <p className="mb-3">{errorMessage}</p>
-      <div className="flex justify-end gap-2">
-        {/* Close button */}
+      <div className="flex justify-between items-start">
+        <p className="mb-3">{errorMessage}</p>
+        {/* X icon to close popup */}
         <button
           onClick={() => setShowError(false)}
-          className="underline text-white hover:text-gray-200 px-2 py-1"
+          className="ml-2 text-white hover:text-gray-200 font-bold text-lg"
         >
-          Close
+          ×
         </button>
+      </div>
 
+      <div className="flex justify-end mt-2">
         {/* Go Home button */}
         <button
           onClick={() => {
