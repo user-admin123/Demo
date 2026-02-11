@@ -26,6 +26,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <WhatsAppButton />
+        <BackToTopButton />
         <Layout>
           <Routes>
             <Route path="/" element={<HomePage />} />
