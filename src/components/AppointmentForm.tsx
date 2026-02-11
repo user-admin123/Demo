@@ -143,11 +143,13 @@ export default function AppointmentForm() {
       return;
     }
 
-    // Success
-    toast.success(
-      "Appointment booked! We’ll contact you shortly to confirm your appointment.",
-      { duration: 4000 }
-    );
+    const isSuccess = true; // <-- set this to false to simulate failure
+
+    if (isSuccess) {
+      toast.success(
+        "Appointment booked! We’ll contact you shortly to confirm your appointment.",
+        { duration: 4000 }
+      );
 
     reset();
     setSelectedTime("");
