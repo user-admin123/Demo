@@ -102,7 +102,7 @@ export default function ContactPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="heading-md text-foreground mb-6">
+              <h2 className="heading-md text-foreground mb-6 text-center">
                 Send a Message
               </h2>
 
@@ -210,7 +210,7 @@ export default function ContactPage() {
               className="space-y-8"
             >
               <div className="glass-card p-6">
-                <h3 className="heading-md text-foreground mb-4">
+                <h3 className="heading-md text-foreground mb-4 text-center">
                   Get in Touch
                 </h3>
                 <div className="flex flex-col gap-4">
@@ -242,7 +242,7 @@ export default function ContactPage() {
               </div>
 
               <div className="glass-card p-6">
-                <h3 className="font-heading text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                <h3 className="font-heading text-lg font-medium text-foreground mb-4 flex items-center justify-center gap-2">
                   <Clock size={18} className="text-primary" />
                   Business Hours
                 </h3>
