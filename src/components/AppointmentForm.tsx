@@ -128,78 +128,42 @@ export default function AppointmentForm() {
 
   // Form submission
   const onSubmit = async (data: AppointmentFormData) => {
-    try {
-      await toast.promise(
-        fetch("/api/appointment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        }).then(async (res) => {
-          if (!res.ok) throw new Error("Submission failed");
-          reset();
-          setSelectedTime("");
-          return res;
-        }),
-        {
-          loading: {
-            render: "Booking appointment...",
-            duration: 0, // stays until resolved
-            style: {
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "#3b82f6",
-              color: "#fff",
-              padding: "1rem 2rem",
-              fontSize: "1rem",
-              borderRadius: "0.5rem",
-              textAlign: "center",
-              zIndex: 9999,
-            },
-          },
-          success: {
-            render:
-              "Appointment booked! We’ll contact you shortly to confirm your appointment.",
-            duration: 4000,
-            style: {
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "#22c55e",
-              color: "#fff",
-              padding: "1rem 2rem",
-              fontSize: "1rem",
-              borderRadius: "0.5rem",
-              textAlign: "center",
-              zIndex: 9999,
-            },
-          },
-          error: {
-            render: "Submission failed. Please try again or contact us directly.",
-            duration: 4000,
-            style: {
-              position: "top-right",
-              background: "#ef4444",
-              color: "#fff",
-              padding: "0.8rem 1.5rem",
-              borderRadius: "0.5rem",
-              textAlign: "center",
-              zIndex: 9999,
-            },
-          },
-        }
-      );
+  try {
+    const res = await fetch("/api/appointment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-      // Auto redirect after 3s
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 3000);
-    } catch (err) {
-      console.error(err);
+    if (!res.ok) {
+      // Show error toast only, no redirect
+      toast.error("Submission failed. Please try again or contact us directly.", {
+        duration: 4000,
+      });
+      return;
     }
-  };
+
+    // Success
+    toast.success(
+      "Appointment booked! We’ll contact you shortly to confirm your appointment.",
+      { duration: 4000 }
+    );
+
+    reset();
+    setSelectedTime("");
+
+    // Only redirect on success
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 3000);
+  } catch (err) {
+    console.error(err);
+    toast.error(
+      "Unable to connect to server. Please try again later.",
+      { duration: 4000 }
+    );
+  }
+};
 
   return (
     <div className="section-padding">
