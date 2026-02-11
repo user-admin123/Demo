@@ -55,10 +55,12 @@ export default function AppointmentForm() {
     formState: { errors, isSubmitting },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       name: "",
       email: "",
-      phone: "",
+      phone: "+61",
       date: "",
       time: "",
       services: [],
