@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { appointmentSchema, AppointmentFormData } from "./validation";
 import { motion, AnimatePresence } from "framer-motion";
 import { isToday, isAfter, setHours, setMinutes, getDay } from "date-fns";
+import { toast } from "@/components/ui/sonner";
 
 const SERVICES = [
   "Basic Mani/Pedi (No Polish)",
@@ -120,27 +121,36 @@ export default function AppointmentForm() {
     }
   };
 
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
   const onSubmit = async (data: AppointmentFormData) => {
-    try {
-      const res = await fetch("/api/appointment", {
+  try {
+    await toast.promise(
+      fetch("/api/appointment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
+      }).then(async (res) => {
+        if (!res.ok) throw new Error("Submission failed");
+        reset(); // clear form
+        setSelectedTime("");
+        return res;
+      }),
+      {
+        loading: "Booking appointment...",
+        success: "Appointment booked! We’ll contact you shortly to confirm your appointment."
+        error: "Submission failed. Please try again or contact us directly.",
+      }
+    );
 
-      if (!res.ok) throw new Error("Failed");
+    // Auto redirect after 2 seconds
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 3000);
 
-      setShowSuccess(true); // Show popup
-      reset(); // Clear form
-      setSelectedTime("");
-    } catch (err: any) {
-      setErrorMessage("Submission failed. Please try again or contact us directly.");
-      setShowError(true);
-    }
-  };
+  } catch (err) {
+    // Error already handled by toast.promise
+    console.error(err);
+  }
+};
 
   return (
     <div className="section-padding">
@@ -303,70 +313,6 @@ export default function AppointmentForm() {
           </button>
         </form>
       </div>
-
-      {/* Success Popup */}
-      <AnimatePresence>
-        {showSuccess && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
-          >
-            <div className="bg-white rounded-lg p-8 max-w-sm text-center shadow-xl">
-              <h3 className="heading-md text-foreground mb-4">Appointment Booked!</h3>
-              <p className="text-body mb-6">
-                Thank you! We’ll contact you shortly to confirm your appointment.
-              </p>
-              <button
-                onClick={() => {
-                  setShowSuccess(false);
-                  window.location.href = "/";
-                }}
-                className="bg-primary text-white px-6 py-2 rounded-md font-medium hover:bg-primary/90 transition"
-              >
-                Go to Home
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Failure Popup */}
-<AnimatePresence>
-  {showError && (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed top-5 right-5 bg-destructive text-white px-6 py-4 rounded shadow-md z-50 max-w-sm"
-    >
-      <div className="flex justify-between items-start">
-        <p className="mb-3">{errorMessage}</p>
-        {/* X icon to close popup */}
-        <button
-          onClick={() => setShowError(false)}
-          className="ml-2 text-white hover:text-gray-200 font-bold text-lg"
-        >
-          ×
-        </button>
-      </div>
-
-      <div className="flex justify-end mt-2">
-        {/* Go Home button */}
-        <button
-          onClick={() => {
-            setShowError(false);
-            window.location.href = "/";
-          }}
-          className="bg-white text-destructive px-3 py-1 rounded-md font-medium hover:bg-gray-100 transition"
-        >
-          Go Home
-        </button>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
     </div>
   );
 }
