@@ -29,6 +29,8 @@ export default function ContactPage() {
     reset,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       name: "",
       phone: "+61", // default country code
