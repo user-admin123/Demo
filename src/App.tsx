@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster position="top-right" />
+      <Toaster />
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
